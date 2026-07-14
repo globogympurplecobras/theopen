@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Open 2026 — Aussie Featured Groups</title>
+<style>
+  :root{
+    --ink:#182a24;
+    --paper:#f6f4ee;
+    --line:#d9d3c2;
+    --green:#0b4d3a;
+    --green-dark:#082f23;
+    --gold:#c8961e;
+    --gold-bg:#fdf3dd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding-bottom:50px;
+  }
+  header{
+    position:sticky; top:0; z-index:20;
+    background:var(--green); color:#fff;
+    padding:14px 16px 0;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  header h1{ margin:0 0 2px; font-size:1.15rem; font-weight:800; }
+  header .sub{ margin:0 0 10px; font-size:.75rem; opacity:.85; }
+  .toolbar{ display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .toolbar button{
+    background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
+    padding:7px 11px; border-radius:8px; font-size:.75rem; font-weight:700; cursor:pointer;
+  }
+  .toolbar button.active{ background:var(--gold); color:#3a2900; border-color:var(--gold); }
+  #status{
+    font-size:.7rem; margin-left:auto; display:flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  #status .dot{ width:7px; height:7px; border-radius:50%; background:#f4c542; }
+  #status.ok .dot{ background:#4caf50; }
+  #status.error .dot{ background:#e53935; }
+  .rounds{ display:flex; gap:4px; overflow-x:auto; }
+  .round-tab{
+    flex:0 0 auto; background:rgba(255,255,255,.1); color:#fff; border:none;
+    border-radius:10px 10px 0 0; padding:9px 14px; font-size:.78rem; font-weight:700;
+    cursor:pointer; opacity:.7;
+  }
+  .round-tab.active{ background:var(--paper); color:var(--green); opacity:1; }
+  .round-tab .rstat{ font-weight:500; opacity:.75; font-size:.65rem; margin-left:4px; }
+
+  main{ padding:14px 10px 0; max-width:760px; margin:0 auto; }
+  .banner{
+    background:#fff3d6; border:1px solid var(--gold); color:#5c4300;
+    border-radius:10px; padding:12px 14px; font-size:.78rem; margin-bottom:14px; line-height:1.5;
+  }
+  .banner.err{ background:#fdecea; border-color:#e57373; color:#8a1f11; }
+  .banner code{ font-size:.7rem; word-break:break-all; }
+
+  .section-title{
+    font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+    color:#6b6558; margin:18px 4px 8px;
+  }
+
+  .group{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin:10px 0; box-shadow:0 1px 3px rgba(20,15,5,.08);
+  }
+  .group.featured{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-bg), 0 2px 6px rgba(20,15,5,.1); }
+  .g-top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .g-tee{ font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; }
+  .g-hole{ font-size:.72rem; color:#6b6558; background:#eee; padding:2px 8px; border-radius:20px; }
+  .star-btn{
+    margin-left:auto; background:none; border:none; font-size:1.3rem; cursor:pointer;
+    color:#c7c2b3; padding:2px; -webkit-tap-highlight-color:transparent;
+  }
+  .star-btn.active{ color:var(--gold); }
+  .player{
+    display:flex; align-items:center; gap:10px; padding:7px 0;
+    border-top:1px dashed var(--line);
+  }
+  .player:first-of-type{ border-top:none; }
+  .player.aus{ font-weight:700; }
+  .flag{ font-size:.68rem; background:#eee; color:#666; padding:2px 7px; border-radius:20px; white-space:nowrap; }
+  .flag.aus{ background:var(--gold-bg); color:#8a5a00; font-weight:800; }
+  .p-name{ flex:1; font-size:.9rem; }
+  .p-score{ font-weight:800; font-variant-numeric:tabular-nums; font-size:.9rem; min-width:2.4em; text-align:right; }
+  .p-thru{ font-size:.68rem; color:#8a8577; min-width:3.2em; text-align:right; }
+
+  .empty{ text-align:center; padding:40px 20px; color:#8a8577; font-size:.85rem; line-height:1.6; }
+  .empty strong{ display:block; color:var(--ink); font-size:1rem; margin-bottom:6px; }
+
+  .field-list{ font-size:.82rem; }
+  .field-row{
+    display:flex; align-items:center; gap:8px; padding:6px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .field-row .pos{ width:2.6em; color:#8a8577; font-variant-numeric:tabular-nums; }
+  .field-row .fname{ flex:1; }
+  .field-row .fscore{ font-weight:700; font-variant-numeric:tabular-nums; }
+  details.field-toggle{ margin:20px 0 40px; }
+  details.field-toggle summary{
+    cursor:pointer; font-size:.78rem; font-weight:700; color:var(--green); padding:8px 0;
+  }
+
+  .spinner{
+    display:inline-block; width:14px; height:14px; border:2px solid #ccc;
+    border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite;
+    vertical-align:middle; margin-right:6px;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏌️ The Open 2026 — Aussie Featured Groups</h1>
+  <div class="sub">154th Open · Royal Birkdale · personal tracker, data via ESPN's public golf feed</div>
+  <div class="toolbar">
+    <button id="refreshBtn">↻ Refresh</button>
+    <button id="autoBtn">Auto: Off</button>
+    <button id="fieldBtn">Filter: 🇦🇺 only</button>
+    <span id="status"><span class="dot"></span><span id="statusText">Loading…</span></span>
+  </div>
+  <div class="rounds" id="rounds"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+const TOURNAMENT_ID = '401811957';
+const ROUNDS = [
+  {n:1, date:'2026-07-16', label:'Round 1', short:'Thu'},
+  {n:2, date:'2026-07-17', label:'Round 2', short:'Fri'},
+  {n:3, date:'2026-07-18', label:'Round 3', short:'Sat'},
+  {n:4, date:'2026-07-19', label:'Round 4', short:'Sun'}
+];
+const SCOREBOARD_URL = (date) =>
+  `https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=${date.replace(/-/g,'')}&tournamentId=${TOURNAMENT_ID}`;
+const PLAYERSUMMARY_URL = (playerId) =>
+  `https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard/${TOURNAMENT_ID}/playersummary?season=2026&player=${playerId}`;
+
+const FEATURED_KEY = 'open2026-featured-v1';
+const FILTER_KEY = 'open2026-filter-v1';
+
+let currentRoundIdx = 0;
+let filterAusOnly = (localStorage.getItem(FILTER_KEY) ?? '1') === '1';
+let autoRefresh = false;
+let autoTimer = null;
+let featured = {};
+try{ featured = JSON.parse(localStorage.getItem(FEATURED_KEY) || '{}'); }catch(e){ featured = {}; }
+
+// Cache of playersummary results (round detail incl. tee time) per player,
+// so we don't refetch the whole field's detail every refresh.
+const detailCache = {};
+
+const roundsEl = document.getElementById('rounds');
+const mainEl = document.getElementById('main');
+const statusEl = document.getElementById('status');
+const statusText = document.getElementById('statusText');
+const fieldBtn = document.getElementById('fieldBtn');
+const autoBtn = document.getElementById('autoBtn');
+
+function setStatus(mode, text){
+  statusEl.className = mode;
+  statusText.textContent = text;
+}
+
+function pickDefaultRound(){
+  const now = new Date();
+  for(let i=0;i<ROUNDS.length;i++){
+    const roundStart = new Date(ROUNDS[i].date+'T00:00:00Z');
+    const roundEnd = new Date(roundStart.getTime() + 24*3600*1000);
+    if(now < roundEnd) return i;
+  }
+  return ROUNDS.length - 1;
+}
+
+function buildRoundTabs(){
+  roundsEl.innerHTML = '';
+  ROUNDS.forEach((r, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'round-tab' + (i===currentRoundIdx?' active':'');
+    btn.innerHTML = `${r.short} <span class="rstat">${r.label}</span>`;
+    btn.addEventListener('click', ()=>{ currentRoundIdx = i; buildRoundTabs(); loadRound(); });
+    roundsEl.appendChild(btn);
+  });
+}
+
+fieldBtn.addEventListener('click', ()=>{
+  filterAusOnly = !filterAusOnly;
+  localStorage.setItem(FILTER_KEY, filterAusOnly ? '1':'0');
+  fieldBtn.classList.toggle('active', filterAusOnly);
+  fieldBtn.textContent = filterAusOnly ? 'Filter: 🇦🇺 only' : 'Filter: Full field';
+  renderCurrent();
+});
+fieldBtn.classList.toggle('active', filterAusOnly);
+fieldBtn.textContent = filterAusOnly ? 'Filter: 🇦🇺 only' : 'Filter: Full field';
+
+document.getElementById('refreshBtn').addEventListener('click', loadRound);
+
+autoBtn.addEventListener('click', ()=>{
+  autoRefresh = !autoRefresh;
+  autoBtn.classList.toggle('active', autoRefresh);
+  autoBtn.textContent = 'Auto: ' + (autoRefresh ? 'On (60s)' : 'Off');
+  if(autoTimer) clearInterval(autoTimer);
+  if(autoRefresh) autoTimer = setInterval(loadRound, 60000);
+});
+
+function extractCompetitors(json){
+  try{
+    return json.events[0].competitions[0].competitors || [];
+  }catch(e){ return []; }
+}
+
+function isAussie(c){
+  const flag = c.athlete && c.athlete.flag && c.athlete.flag.alt;
+  return !!flag && /australia/i.test(flag);
+}
+
+function holesThru(c){
+  const ls = c.linescores || [];
+  const played = ls.filter(h => typeof h.value === 'number').length;
+  if(played === 0) return c.status && c.status.type && c.status.type.state === 'pre' ? '—' : '—';
+  if(played >= 18) return 'F';
+  return played + '*';
+}
+
+async function fetchDetail(playerId){
+  if(detailCache[playerId]) return detailCache[playerId];
+  try{
+    const res = await fetch(PLAYERSUMMARY_URL(playerId));
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+    detailCache[playerId] = json;
+    return json;
+  }catch(e){
+    detailCache[playerId] = null;
+    return null;
+  }
+}
+
+function teeTimeForRound(detail, roundNum){
+  if(!detail || !detail.rounds) return null;
+  const r = detail.rounds.find(r => r.period === roundNum);
+  return r || null;
+}
+
+let lastCompetitors = [];
+
+async function loadRound(){
+  const round = ROUNDS[currentRoundIdx];
+  setStatus('pending', 'Fetching '+round.label+'…');
+  mainEl.innerHTML = `<div class="empty"><span class="spinner"></span>Loading ${round.label}…</div>`;
+
+  let json;
+  try{
+    const res = await fetch(SCOREBOARD_URL(round.date));
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    json = await res.json();
+  }catch(e){
+    setStatus('error', 'Fetch failed');
+    mainEl.innerHTML = `<div class="banner err">
+      Couldn't reach ESPN's feed (${e.message}).<br><br>
+      If you're viewing this inside the Claude app's file preview, open it in Safari/Chrome directly instead —
+      the in-app preview often blocks outbound network requests entirely.<br><br>
+      <code>${SCOREBOARD_URL(round.date)}</code>
+    </div>`;
+    return;
+  }
+
+  const competitors = extractCompetitors(json);
+  lastCompetitors = competitors;
+
+  if(competitors.length === 0){
+    setStatus('ok', 'No field published yet');
+    mainEl.innerHTML = `<div class="empty"><strong>Nothing here yet</strong>
+      ${round.label} hasn't got a published field/leaderboard from ESPN yet. Try again closer to the round,
+      or check another day tab.</div>`;
+    return;
+  }
+
+  setStatus('ok', `${competitors.length} in field · updated ${new Date().toLocaleTimeString()}`);
+
+  const aussies = competitors.filter(isAussie);
+
+  // Backfill tee-time/round detail for Australians only (keeps call count low).
+  await Promise.all(aussies.map(c => fetchDetail(c.id || (c.athlete && c.athlete.id))));
+
+  renderCurrent();
+}
+
+function renderCurrent(){
+  const round = ROUNDS[currentRoundIdx];
+  const competitors = lastCompetitors;
+  if(!competitors || competitors.length === 0) return;
+
+  const aussies = competitors.filter(isAussie);
+
+  mainEl.innerHTML = '';
+
+  if(aussies.length === 0){
+    mainEl.innerHTML = `<div class="banner">No Australians found in this round's field.
+      Either they missed the cut, ESPN's country field didn't resolve for them, or the field for this
+      round isn't published yet. Toggle "Filter: Full field" above to see everyone and sanity-check.</div>`;
+  }else{
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = `🇦🇺 Australians — ${round.label} (${aussies.length})`;
+    mainEl.appendChild(title);
+
+    // Sort by tee time where known, else by score.
+    aussies.sort((a,b)=>{
+      const da = detailCache[a.id]; const db = detailCache[b.id];
+      const ra = teeTimeForRound(da, round.n); const rb = teeTimeForRound(db, round.n);
+      if(ra && rb) return new Date(ra.teeTime) - new Date(rb.teeTime);
+      if(ra) return -1;
+      if(rb) return 1;
+      return 0;
+    });
+
+    aussies.forEach(c=>{
+      const id = c.id || (c.athlete && c.athlete.id);
+      const detail = detailCache[id];
+      const rd = teeTimeForRound(detail, round.n);
+      const name = c.athlete ? c.athlete.displayName : 'Unknown';
+      const score = c.score || '–';
+      const thru = holesThru(c);
+      const isFeat = !!featured[id];
+
+      const card = document.createElement('div');
+      card.className = 'group' + (isFeat ? ' featured' : '');
+      card.innerHTML = `
+        <div class="g-top">
+          <span class="g-tee">${rd ? new Date(rd.teeTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Tee time TBC'}</span>
+          ${rd ? `<span class="g-hole">off ${rd.startTee===10?'10th':'1st'}</span>` : ''}
+          <button type="button" class="star-btn${isFeat?' active':''}" data-id="${id}">${isFeat?'★':'☆'}</button>
+        </div>
+        <div class="player aus">
+          <span class="flag aus">🇦🇺 AUS</span>
+          <span class="p-name">${name}</span>
+          <span class="p-score">${score}</span>
+          <span class="p-thru">${thru}</span>
+        </div>
+      `;
+      card.querySelector('.star-btn').addEventListener('click', (e)=>{
+        featured[id] = !featured[id];
+        localStorage.setItem(FEATURED_KEY, JSON.stringify(featured));
+        renderCurrent();
+      });
+      mainEl.appendChild(card);
+    });
+  }
+
+  // Optional full-field view for context.
+  const details = document.createElement('details');
+  details.className = 'field-toggle';
+  const nonAus = competitors.filter(c=>!isAussie(c));
+  details.innerHTML = `<summary>▸ Show full field (${competitors.length} players)</summary>`;
+  const list = document.createElement('div');
+  list.className = 'field-list';
+  competitors
+    .slice()
+    .sort((a,b)=>{
+      const pa = parseFloat((a.score||'0').replace('E','0').replace('+',''));
+      const pb = parseFloat((b.score||'0').replace('E','0').replace('+',''));
+      return (isNaN(pa)?99:pa) - (isNaN(pb)?99:pb);
+    })
+    .forEach((c,i)=>{
+      const row = document.createElement('div');
+      row.className = 'field-row';
+      const aus = isAussie(c);
+      row.innerHTML = `<span class="pos">${i+1}</span>
+        <span class="fname">${aus?'🇦🇺 ':''}${c.athlete?c.athlete.displayName:'Unknown'}</span>
+        <span class="fscore">${c.score||'–'}</span>`;
+      list.appendChild(row);
+    });
+  details.appendChild(list);
+  mainEl.appendChild(details);
+}
+
+// ---------- Boot ----------
+currentRoundIdx = pickDefaultRound();
+buildRoundTabs();
+loadRound();
+</script>
+
+</body>
+</html>
