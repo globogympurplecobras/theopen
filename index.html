@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Open 2026 — Aussie Featured Groups</title>
+<title>The Open 2026 — Featured Groups</title>
 <style>
   :root{
     --ink:#182a24;
     --paper:#f6f4ee;
     --line:#d9d3c2;
     --green:#0b4d3a;
-    --green-dark:#082f23;
     --gold:#c8961e;
     --gold-bg:#fdf3dd;
   }
@@ -28,20 +27,24 @@
     padding:14px 16px 0;
     box-shadow:0 2px 6px rgba(0,0,0,.15);
   }
-  header h1{ margin:0 0 2px; font-size:1.15rem; font-weight:800; }
-  header .sub{ margin:0 0 10px; font-size:.75rem; opacity:.85; }
+  header h1{ margin:0 0 2px; font-size:1.1rem; font-weight:800; }
+  header .sub{ margin:0 0 10px; font-size:.73rem; opacity:.85; }
   .toolbar{ display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
   .toolbar button{
     background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
     padding:7px 11px; border-radius:8px; font-size:.75rem; font-weight:700; cursor:pointer;
   }
   .toolbar button.active{ background:var(--gold); color:#3a2900; border-color:var(--gold); }
-  #status{
-    font-size:.7rem; margin-left:auto; display:flex; align-items:center; gap:5px; white-space:nowrap;
-  }
+  .focus-group{ display:flex; gap:0; border:1px solid rgba(255,255,255,.3); border-radius:8px; overflow:hidden; }
+  .focus-group button{ border:none; border-radius:0; background:rgba(255,255,255,.08); }
+  .focus-group button + button{ border-left:1px solid rgba(255,255,255,.25); }
+  .focus-group button.active{ background:var(--gold); color:#3a2900; }
+  #status{ font-size:.68rem; margin-left:auto; display:flex; align-items:center; gap:5px; white-space:nowrap; }
   #status .dot{ width:7px; height:7px; border-radius:50%; background:#f4c542; }
   #status.ok .dot{ background:#4caf50; }
   #status.error .dot{ background:#e53935; }
+  #status.pending .dot{ background:#f4c542; animation:pulse 1s infinite; }
+  @keyframes pulse{ 50%{ opacity:.3; } }
   .rounds{ display:flex; gap:4px; overflow-x:auto; }
   .round-tab{
     flex:0 0 auto; background:rgba(255,255,255,.1); color:#fff; border:none;
@@ -49,15 +52,21 @@
     cursor:pointer; opacity:.7;
   }
   .round-tab.active{ background:var(--paper); color:var(--green); opacity:1; }
-  .round-tab .rstat{ font-weight:500; opacity:.75; font-size:.65rem; margin-left:4px; }
 
   main{ padding:14px 10px 0; max-width:760px; margin:0 auto; }
+  .note{ font-size:.72rem; color:#8a8577; margin:0 4px 14px; line-height:1.5; }
   .banner{
     background:#fff3d6; border:1px solid var(--gold); color:#5c4300;
     border-radius:10px; padding:12px 14px; font-size:.78rem; margin-bottom:14px; line-height:1.5;
   }
   .banner.err{ background:#fdecea; border-color:#e57373; color:#8a1f11; }
   .banner code{ font-size:.7rem; word-break:break-all; }
+  .progress-wrap{
+    background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 14px;
+    margin-bottom:14px; font-size:.78rem;
+  }
+  .progress-bar{ height:6px; background:#eee; border-radius:4px; overflow:hidden; margin-top:6px; }
+  .progress-fill{ height:100%; background:var(--green); width:0%; transition:width .2s; }
 
   .section-title{
     font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
@@ -68,8 +77,8 @@
     background:#fff; border:1px solid var(--line); border-radius:14px;
     padding:14px 16px; margin:10px 0; box-shadow:0 1px 3px rgba(20,15,5,.08);
   }
-  .group.featured{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-bg), 0 2px 6px rgba(20,15,5,.1); }
-  .g-top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .group.starred{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-bg), 0 2px 6px rgba(20,15,5,.1); }
+  .g-top{ display:flex; align-items:center; gap:8px; margin-bottom:8px; border-bottom:1px dashed var(--line); padding-bottom:8px; }
   .g-tee{ font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; }
   .g-hole{ font-size:.72rem; color:#6b6558; background:#eee; padding:2px 8px; border-radius:20px; }
   .star-btn{
@@ -77,14 +86,10 @@
     color:#c7c2b3; padding:2px; -webkit-tap-highlight-color:transparent;
   }
   .star-btn.active{ color:var(--gold); }
-  .player{
-    display:flex; align-items:center; gap:10px; padding:7px 0;
-    border-top:1px dashed var(--line);
-  }
-  .player:first-of-type{ border-top:none; }
-  .player.aus{ font-weight:700; }
-  .flag{ font-size:.68rem; background:#eee; color:#666; padding:2px 7px; border-radius:20px; white-space:nowrap; }
-  .flag.aus{ background:var(--gold-bg); color:#8a5a00; font-weight:800; }
+  .player{ display:flex; align-items:center; gap:10px; padding:6px 0; }
+  .player.focus{ font-weight:800; }
+  .flag{ font-size:.68rem; background:#eee; color:#666; padding:2px 7px; border-radius:20px; white-space:nowrap; min-width:2.4em; text-align:center; }
+  .flag.focus{ background:var(--gold-bg); color:#8a5a00; font-weight:800; }
   .p-name{ flex:1; font-size:.9rem; }
   .p-score{ font-weight:800; font-variant-numeric:tabular-nums; font-size:.9rem; min-width:2.4em; text-align:right; }
   .p-thru{ font-size:.68rem; color:#8a8577; min-width:3.2em; text-align:right; }
@@ -93,17 +98,12 @@
   .empty strong{ display:block; color:var(--ink); font-size:1rem; margin-bottom:6px; }
 
   .field-list{ font-size:.82rem; }
-  .field-row{
-    display:flex; align-items:center; gap:8px; padding:6px 4px;
-    border-bottom:1px solid var(--line);
-  }
+  .field-row{ display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid var(--line); }
   .field-row .pos{ width:2.6em; color:#8a8577; font-variant-numeric:tabular-nums; }
   .field-row .fname{ flex:1; }
   .field-row .fscore{ font-weight:700; font-variant-numeric:tabular-nums; }
   details.field-toggle{ margin:20px 0 40px; }
-  details.field-toggle summary{
-    cursor:pointer; font-size:.78rem; font-weight:700; color:var(--green); padding:8px 0;
-  }
+  details.field-toggle summary{ cursor:pointer; font-size:.78rem; font-weight:700; color:var(--green); padding:8px 0; }
 
   .spinner{
     display:inline-block; width:14px; height:14px; border:2px solid #ccc;
@@ -116,12 +116,15 @@
 <body>
 
 <header>
-  <h1>🏌️ The Open 2026 — Aussie Featured Groups</h1>
-  <div class="sub">154th Open · Royal Birkdale · personal tracker, data via ESPN's public golf feed</div>
+  <h1>🏌️ The Open 2026 — Featured Groups</h1>
+  <div class="sub">154th Open · Royal Birkdale · data via ESPN's public golf feed</div>
   <div class="toolbar">
+    <div class="focus-group">
+      <button id="focusAus" class="active">🇦🇺 Australia</button>
+      <button id="focusScandi">🇸🇪 Scandinavia</button>
+    </div>
     <button id="refreshBtn">↻ Refresh</button>
     <button id="autoBtn">Auto: Off</button>
-    <button id="fieldBtn">Filter: 🇦🇺 only</button>
     <span id="status"><span class="dot"></span><span id="statusText">Loading…</span></span>
   </div>
   <div class="rounds" id="rounds"></div>
@@ -142,31 +145,51 @@ const SCOREBOARD_URL = (date) =>
 const PLAYERSUMMARY_URL = (playerId) =>
   `https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard/${TOURNAMENT_ID}/playersummary?season=2026&player=${playerId}`;
 
-const FEATURED_KEY = 'open2026-featured-v1';
-const FILTER_KEY = 'open2026-filter-v1';
+// "Scandinavia" here = Norway, Sweden, Denmark (the strict definition).
+// Finland/Iceland are Nordic but not Scandinavian — easy to widen this list if you want that instead.
+const NATIONALITY_SETS = {
+  australia: { label: 'Australia', flagEmoji: '🇦🇺', match: (c)=> /^australia$/i.test(c||'') },
+  scandinavia: { label: 'Scandinavia', flagEmoji: '🇸🇪', match: (c)=> /^(norway|sweden|denmark)$/i.test(c||'') }
+};
+
+const FOCUS_KEY = 'open2026-focus-v2';
+const STARRED_KEY = 'open2026-starred-groups-v2';
 
 let currentRoundIdx = 0;
-let filterAusOnly = (localStorage.getItem(FILTER_KEY) ?? '1') === '1';
+let focusKey = localStorage.getItem(FOCUS_KEY) || 'australia';
 let autoRefresh = false;
 let autoTimer = null;
-let featured = {};
-try{ featured = JSON.parse(localStorage.getItem(FEATURED_KEY) || '{}'); }catch(e){ featured = {}; }
+let starred = {};
+try{ starred = JSON.parse(localStorage.getItem(STARRED_KEY) || '{}'); }catch(e){ starred = {}; }
 
-// Cache of playersummary results (round detail incl. tee time) per player,
-// so we don't refetch the whole field's detail every refresh.
+// Cache of playersummary results per player id — a single call returns every
+// published round's tee time for that player, so it's reused across round tabs.
 const detailCache = {};
+let lastCompetitors = [];
 
 const roundsEl = document.getElementById('rounds');
 const mainEl = document.getElementById('main');
 const statusEl = document.getElementById('status');
 const statusText = document.getElementById('statusText');
-const fieldBtn = document.getElementById('fieldBtn');
 const autoBtn = document.getElementById('autoBtn');
+const focusAusBtn = document.getElementById('focusAus');
+const focusScandiBtn = document.getElementById('focusScandi');
 
 function setStatus(mode, text){
   statusEl.className = mode;
   statusText.textContent = text;
 }
+
+function setFocus(key){
+  focusKey = key;
+  localStorage.setItem(FOCUS_KEY, key);
+  focusAusBtn.classList.toggle('active', key==='australia');
+  focusScandiBtn.classList.toggle('active', key==='scandinavia');
+  renderCurrent();
+}
+focusAusBtn.addEventListener('click', ()=>setFocus('australia'));
+focusScandiBtn.addEventListener('click', ()=>setFocus('scandinavia'));
+setFocus(focusKey);
 
 function pickDefaultRound(){
   const now = new Date();
@@ -183,24 +206,13 @@ function buildRoundTabs(){
   ROUNDS.forEach((r, i)=>{
     const btn = document.createElement('button');
     btn.className = 'round-tab' + (i===currentRoundIdx?' active':'');
-    btn.innerHTML = `${r.short} <span class="rstat">${r.label}</span>`;
+    btn.textContent = `${r.short}`;
     btn.addEventListener('click', ()=>{ currentRoundIdx = i; buildRoundTabs(); loadRound(); });
     roundsEl.appendChild(btn);
   });
 }
 
-fieldBtn.addEventListener('click', ()=>{
-  filterAusOnly = !filterAusOnly;
-  localStorage.setItem(FILTER_KEY, filterAusOnly ? '1':'0');
-  fieldBtn.classList.toggle('active', filterAusOnly);
-  fieldBtn.textContent = filterAusOnly ? 'Filter: 🇦🇺 only' : 'Filter: Full field';
-  renderCurrent();
-});
-fieldBtn.classList.toggle('active', filterAusOnly);
-fieldBtn.textContent = filterAusOnly ? 'Filter: 🇦🇺 only' : 'Filter: Full field';
-
 document.getElementById('refreshBtn').addEventListener('click', loadRound);
-
 autoBtn.addEventListener('click', ()=>{
   autoRefresh = !autoRefresh;
   autoBtn.classList.toggle('active', autoRefresh);
@@ -210,26 +222,23 @@ autoBtn.addEventListener('click', ()=>{
 });
 
 function extractCompetitors(json){
-  try{
-    return json.events[0].competitions[0].competitors || [];
-  }catch(e){ return []; }
+  try{ return json.events[0].competitions[0].competitors || []; }catch(e){ return []; }
 }
 
-function isAussie(c){
-  const flag = c.athlete && c.athlete.flag && c.athlete.flag.alt;
-  return !!flag && /australia/i.test(flag);
+function countryOf(c){
+  return c.athlete && c.athlete.flag && c.athlete.flag.alt;
 }
 
 function holesThru(c){
   const ls = c.linescores || [];
   const played = ls.filter(h => typeof h.value === 'number').length;
-  if(played === 0) return c.status && c.status.type && c.status.type.state === 'pre' ? '—' : '—';
+  if(played === 0) return '—';
   if(played >= 18) return 'F';
   return played + '*';
 }
 
 async function fetchDetail(playerId){
-  if(detailCache[playerId]) return detailCache[playerId];
+  if(detailCache[playerId] !== undefined) return detailCache[playerId];
   try{
     const res = await fetch(PLAYERSUMMARY_URL(playerId));
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -242,17 +251,56 @@ async function fetchDetail(playerId){
   }
 }
 
-function teeTimeForRound(detail, roundNum){
-  if(!detail || !detail.rounds) return null;
-  const r = detail.rounds.find(r => r.period === roundNum);
-  return r || null;
+function roundDetailFor(playerId, roundNum){
+  const d = detailCache[playerId];
+  if(!d || !d.rounds) return null;
+  return d.rounds.find(r => r.period === roundNum) || null;
 }
 
-let lastCompetitors = [];
+// Concurrency-limited fetch of every competitor's detail for the given round,
+// skipping anyone we already have cached data for that round.
+async function fetchAllDetails(competitors, roundNum, onProgress){
+  const needed = competitors.filter(c => {
+    const cached = detailCache[c.id];
+    if(cached === undefined) return true;
+    if(cached === null) return false; // already tried & failed, don't retry every load
+    return !cached.rounds || !cached.rounds.some(r => r.period === roundNum);
+  });
+  const total = needed.length;
+  let done = 0;
+  onProgress(done, total);
+  if(total === 0) return;
+
+  const CONCURRENCY = 8;
+  let idx = 0;
+  async function worker(){
+    while(idx < needed.length){
+      const c = needed[idx++];
+      await fetchDetail(c.id);
+      done++;
+      onProgress(done, total);
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(CONCURRENCY, needed.length)}, worker));
+}
+
+function buildGroups(competitors, roundNum){
+  const groups = {};
+  competitors.forEach(c=>{
+    const rd = roundDetailFor(c.id, roundNum);
+    if(!rd || !rd.teeTime) return;
+    const key = rd.teeTime + '|' + rd.startTee;
+    if(!groups[key]) groups[key] = { teeTime: rd.teeTime, startTee: rd.startTee, members: [] };
+    groups[key].members.push(c);
+  });
+  return Object.values(groups).sort((a,b)=> new Date(a.teeTime) - new Date(b.teeTime));
+}
+
+function groupKey(g){ return g.teeTime + '|' + g.startTee; }
 
 async function loadRound(){
   const round = ROUNDS[currentRoundIdx];
-  setStatus('pending', 'Fetching '+round.label+'…');
+  setStatus('pending', 'Fetching field…');
   mainEl.innerHTML = `<div class="empty"><span class="spinner"></span>Loading ${round.label}…</div>`;
 
   let json;
@@ -264,8 +312,8 @@ async function loadRound(){
     setStatus('error', 'Fetch failed');
     mainEl.innerHTML = `<div class="banner err">
       Couldn't reach ESPN's feed (${e.message}).<br><br>
-      If you're viewing this inside the Claude app's file preview, open it in Safari/Chrome directly instead —
-      the in-app preview often blocks outbound network requests entirely.<br><br>
+      If this is opening inside an app's built-in preview rather than a real browser tab, that's usually
+      the cause — open the hosted GitHub Pages URL in Safari/Chrome directly.<br><br>
       <code>${SCOREBOARD_URL(round.date)}</code>
     </div>`;
     return;
@@ -277,18 +325,27 @@ async function loadRound(){
   if(competitors.length === 0){
     setStatus('ok', 'No field published yet');
     mainEl.innerHTML = `<div class="empty"><strong>Nothing here yet</strong>
-      ${round.label} hasn't got a published field/leaderboard from ESPN yet. Try again closer to the round,
-      or check another day tab.</div>`;
+      ${round.label} hasn't got a published field/leaderboard from ESPN yet. Try another day tab.</div>`;
     return;
   }
 
+  // Need tee-time/group detail for the WHOLE field (not just the focus nationality)
+  // since we don't know who else is in a group until we've checked everyone.
+  mainEl.innerHTML = `<div class="progress-wrap">
+    <span class="spinner"></span>Fetching tee-time/group data for ${competitors.length} players…
+    <span id="progText">0/0</span>
+    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+  </div>`;
+  const progText = document.getElementById('progText');
+  const progFill = document.getElementById('progFill');
+
+  await fetchAllDetails(competitors, round.n, (done, total)=>{
+    progText.textContent = `${done}/${total}`;
+    progFill.style.width = total ? (100*done/total)+'%' : '0%';
+    setStatus('pending', `Fetching group data ${done}/${total}…`);
+  });
+
   setStatus('ok', `${competitors.length} in field · updated ${new Date().toLocaleTimeString()}`);
-
-  const aussies = competitors.filter(isAussie);
-
-  // Backfill tee-time/round detail for Australians only (keeps call count low).
-  await Promise.all(aussies.map(c => fetchDetail(c.id || (c.athlete && c.athlete.id))));
-
   renderCurrent();
 }
 
@@ -297,67 +354,69 @@ function renderCurrent(){
   const competitors = lastCompetitors;
   if(!competitors || competitors.length === 0) return;
 
-  const aussies = competitors.filter(isAussie);
+  const focus = NATIONALITY_SETS[focusKey];
+  const allGroups = buildGroups(competitors, round.n);
+  const focusGroups = allGroups.filter(g => g.members.some(m => focus.match(countryOf(m))));
 
   mainEl.innerHTML = '';
 
-  if(aussies.length === 0){
-    mainEl.innerHTML = `<div class="banner">No Australians found in this round's field.
-      Either they missed the cut, ESPN's country field didn't resolve for them, or the field for this
-      round isn't published yet. Toggle "Filter: Full field" above to see everyone and sanity-check.</div>`;
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = focusKey === 'scandinavia'
+    ? '"Scandinavia" = Norway, Sweden, Denmark only (not Finland/Iceland).'
+    : '';
+  if(note.textContent) mainEl.appendChild(note);
+
+  if(focusGroups.length === 0){
+    mainEl.innerHTML += `<div class="banner">No ${focus.label} players found in groups with tee-time data for this round yet.
+      Either they missed the cut, tee times for this round aren't published, or ESPN's country field
+      didn't resolve for them. Check "Show full field" below to sanity-check.</div>`;
   }else{
     const title = document.createElement('div');
     title.className = 'section-title';
-    title.textContent = `🇦🇺 Australians — ${round.label} (${aussies.length})`;
+    title.textContent = `${focus.flagEmoji} ${focus.label} groups — ${round.label} (${focusGroups.length})`;
     mainEl.appendChild(title);
 
-    // Sort by tee time where known, else by score.
-    aussies.sort((a,b)=>{
-      const da = detailCache[a.id]; const db = detailCache[b.id];
-      const ra = teeTimeForRound(da, round.n); const rb = teeTimeForRound(db, round.n);
-      if(ra && rb) return new Date(ra.teeTime) - new Date(rb.teeTime);
-      if(ra) return -1;
-      if(rb) return 1;
-      return 0;
-    });
-
-    aussies.forEach(c=>{
-      const id = c.id || (c.athlete && c.athlete.id);
-      const detail = detailCache[id];
-      const rd = teeTimeForRound(detail, round.n);
-      const name = c.athlete ? c.athlete.displayName : 'Unknown';
-      const score = c.score || '–';
-      const thru = holesThru(c);
-      const isFeat = !!featured[id];
-
+    focusGroups.forEach(g=>{
+      const key = groupKey(g);
+      const isStarred = !!starred[key];
       const card = document.createElement('div');
-      card.className = 'group' + (isFeat ? ' featured' : '');
-      card.innerHTML = `
-        <div class="g-top">
-          <span class="g-tee">${rd ? new Date(rd.teeTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Tee time TBC'}</span>
-          ${rd ? `<span class="g-hole">off ${rd.startTee===10?'10th':'1st'}</span>` : ''}
-          <button type="button" class="star-btn${isFeat?' active':''}" data-id="${id}">${isFeat?'★':'☆'}</button>
-        </div>
-        <div class="player aus">
-          <span class="flag aus">🇦🇺 AUS</span>
-          <span class="p-name">${name}</span>
-          <span class="p-score">${score}</span>
-          <span class="p-thru">${thru}</span>
-        </div>
-      `;
-      card.querySelector('.star-btn').addEventListener('click', (e)=>{
-        featured[id] = !featured[id];
-        localStorage.setItem(FEATURED_KEY, JSON.stringify(featured));
+      card.className = 'group' + (isStarred ? ' starred' : '');
+
+      const teeTimeStr = new Date(g.teeTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      let html = `<div class="g-top">
+        <span class="g-tee">${teeTimeStr}</span>
+        <span class="g-hole">off ${g.startTee===10?'10th':'1st'}</span>
+        <button type="button" class="star-btn${isStarred?' active':''}" data-key="${key}">${isStarred?'★':'☆'}</button>
+      </div>`;
+
+      g.members
+        .slice()
+        .sort((a,b)=> (focus.match(countryOf(b))?1:0) - (focus.match(countryOf(a))?1:0))
+        .forEach(m=>{
+          const isFocus = focus.match(countryOf(m));
+          const country = countryOf(m) || '—';
+          const name = m.athlete ? m.athlete.displayName : 'Unknown';
+          html += `<div class="player${isFocus?' focus':''}">
+            <span class="flag${isFocus?' focus':''}">${country.slice(0,3).toUpperCase()}</span>
+            <span class="p-name">${name}</span>
+            <span class="p-score">${m.score||'–'}</span>
+            <span class="p-thru">${holesThru(m)}</span>
+          </div>`;
+        });
+
+      card.innerHTML = html;
+      card.querySelector('.star-btn').addEventListener('click', ()=>{
+        starred[key] = !starred[key];
+        localStorage.setItem(STARRED_KEY, JSON.stringify(starred));
         renderCurrent();
       });
       mainEl.appendChild(card);
     });
   }
 
-  // Optional full-field view for context.
   const details = document.createElement('details');
   details.className = 'field-toggle';
-  const nonAus = competitors.filter(c=>!isAussie(c));
   details.innerHTML = `<summary>▸ Show full field (${competitors.length} players)</summary>`;
   const list = document.createElement('div');
   list.className = 'field-list';
@@ -371,9 +430,9 @@ function renderCurrent(){
     .forEach((c,i)=>{
       const row = document.createElement('div');
       row.className = 'field-row';
-      const aus = isAussie(c);
+      const isFocus = focus.match(countryOf(c));
       row.innerHTML = `<span class="pos">${i+1}</span>
-        <span class="fname">${aus?'🇦🇺 ':''}${c.athlete?c.athlete.displayName:'Unknown'}</span>
+        <span class="fname">${isFocus?focus.flagEmoji+' ':''}${c.athlete?c.athlete.displayName:'Unknown'} <span style="color:#aaa">(${countryOf(c)||'—'})</span></span>
         <span class="fscore">${c.score||'–'}</span>`;
       list.appendChild(row);
     });
