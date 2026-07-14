@@ -91,6 +91,11 @@
   .flag{ font-size:.68rem; background:#eee; color:#666; padding:2px 7px; border-radius:20px; white-space:nowrap; min-width:2.4em; text-align:center; }
   .flag.focus{ background:var(--gold-bg); color:#8a5a00; font-weight:800; }
   .p-name{ flex:1; font-size:.9rem; }
+  .p-avatar{
+    width:28px; height:28px; border-radius:50%; object-fit:cover;
+    background:#e9e4d6; border:1px solid var(--line); flex:0 0 auto;
+  }
+  .p-avatar.placeholder{ display:flex; align-items:center; justify-content:center; font-size:.6rem; color:#aaa; }
   .p-score{ font-weight:800; font-variant-numeric:tabular-nums; font-size:.9rem; min-width:2.4em; text-align:right; }
   .p-thru{ font-size:.68rem; color:#8a8577; min-width:3.2em; text-align:right; }
 
@@ -104,6 +109,35 @@
   .field-row .fscore{ font-weight:700; font-variant-numeric:tabular-nums; }
   details.field-toggle{ margin:20px 0 40px; }
   details.field-toggle summary{ cursor:pointer; font-size:.78rem; font-weight:700; color:var(--green); padding:8px 0; }
+
+  .player{ cursor:pointer; }
+  .field-row{ cursor:pointer; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,15,12,.55);
+    display:none; align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{
+    background:#fff; border-radius:18px 18px 0 0; width:100%; max-width:480px;
+    padding:20px 20px 28px; max-height:80vh; overflow-y:auto;
+    animation:slideup .18s ease-out;
+  }
+  @keyframes slideup{ from{ transform:translateY(20px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  .modal-close{
+    float:right; background:#eee; border:none; border-radius:50%; width:30px; height:30px;
+    font-size:1rem; cursor:pointer; color:#666;
+  }
+  .modal-top{ display:flex; gap:14px; align-items:center; margin-bottom:14px; }
+  .modal-headshot{
+    width:76px; height:76px; border-radius:50%; object-fit:cover; background:#eee;
+    border:2px solid var(--line); flex:0 0 auto;
+  }
+  .modal-name{ font-size:1.15rem; font-weight:800; margin:0 0 2px; }
+  .modal-meta{ font-size:.78rem; color:#6b6558; }
+  .modal-stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:.85rem; margin-top:10px; }
+  .modal-stats div b{ display:block; font-size:.68rem; text-transform:uppercase; color:#8a8577; font-weight:700; letter-spacing:.3px; }
+  .modal-holes{ margin-top:14px; font-size:.72rem; color:#6b6558; }
 
   .spinner{
     display:inline-block; width:14px; height:14px; border:2px solid #ccc;
@@ -131,6 +165,10 @@
 </header>
 
 <main id="main"></main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card" id="modalCard"></div>
+</div>
 
 <script>
 const TOURNAMENT_ID = '401811957';
@@ -174,6 +212,47 @@ const statusText = document.getElementById('statusText');
 const autoBtn = document.getElementById('autoBtn');
 const focusAusBtn = document.getElementById('focusAus');
 const focusScandiBtn = document.getElementById('focusScandi');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalCard = document.getElementById('modalCard');
+
+function closeModal(){ modalOverlay.classList.remove('open'); }
+modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) closeModal(); });
+
+function openPlayerModal(playerId, fallbackCompetitor){
+  const detail = detailCache[playerId];
+  const profile = detail && detail.profile;
+  const round = ROUNDS[currentRoundIdx];
+  const rd = roundDetailFor(playerId, round.n);
+
+  const name = (profile && profile.displayName) || (fallbackCompetitor && fallbackCompetitor.athlete && fallbackCompetitor.athlete.displayName) || 'Unknown player';
+  const headshot = profile && profile.headshot;
+  const country = fallbackCompetitor ? countryOf(fallbackCompetitor) : null;
+  const score = fallbackCompetitor ? (fallbackCompetitor.score || '–') : '–';
+  const thru = fallbackCompetitor ? holesThru(fallbackCompetitor) : '–';
+
+  modalCard.innerHTML = `
+    <button type="button" class="modal-close" id="modalCloseBtn">✕</button>
+    <div class="modal-top">
+      ${headshot
+        ? `<img class="modal-headshot" src="${headshot}" alt="${name}" onerror="this.style.display='none'">`
+        : `<div class="modal-headshot"></div>`}
+      <div>
+        <div class="modal-name">${name}</div>
+        <div class="modal-meta">${country ? country+' · ' : ''}${profile && profile.birthPlace ? profile.birthPlace : ''}</div>
+        ${profile && profile.age ? `<div class="modal-meta">Age ${profile.age}</div>` : ''}
+      </div>
+    </div>
+    <div class="modal-stats">
+      <div><b>${round.label} score</b>${score}</div>
+      <div><b>Thru</b>${thru}</div>
+      <div><b>Tee time</b>${rd ? new Date(rd.teeTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+      <div><b>Start hole</b>${rd ? (rd.startTee===10?'10th':'1st') : '—'}</div>
+    </div>
+    ${profile && profile.link ? `<div class="modal-holes"><a href="${profile.link}" target="_blank" rel="noopener">ESPN player page ↗</a></div>` : ''}
+  `;
+  modalCard.querySelector('#modalCloseBtn').addEventListener('click', closeModal);
+  modalOverlay.classList.add('open');
+}
 
 function setStatus(mode, text){
   statusEl.className = mode;
@@ -227,6 +306,15 @@ function extractCompetitors(json){
 
 function countryOf(c){
   return c.athlete && c.athlete.flag && c.athlete.flag.alt;
+}
+
+function avatarHTML(playerId){
+  const detail = detailCache[playerId];
+  const headshot = detail && detail.profile && detail.profile.headshot;
+  if(headshot){
+    return `<img class="p-avatar" src="${headshot}" alt="" onerror="this.outerHTML='<span class=&quot;p-avatar placeholder&quot;>🏌️</span>'">`;
+  }
+  return `<span class="p-avatar placeholder">🏌️</span>`;
 }
 
 function holesThru(c){
@@ -397,7 +485,8 @@ function renderCurrent(){
           const isFocus = focus.match(countryOf(m));
           const country = countryOf(m) || '—';
           const name = m.athlete ? m.athlete.displayName : 'Unknown';
-          html += `<div class="player${isFocus?' focus':''}">
+          html += `<div class="player${isFocus?' focus':''}" data-player-id="${m.id}">
+            ${avatarHTML(m.id)}
             <span class="flag${isFocus?' focus':''}">${country.slice(0,3).toUpperCase()}</span>
             <span class="p-name">${name}</span>
             <span class="p-score">${m.score||'–'}</span>
@@ -406,7 +495,15 @@ function renderCurrent(){
         });
 
       card.innerHTML = html;
-      card.querySelector('.star-btn').addEventListener('click', ()=>{
+      card.querySelectorAll('.player').forEach(row=>{
+        row.addEventListener('click', ()=>{
+          const id = row.dataset.playerId;
+          const comp = g.members.find(m => String(m.id) === String(id));
+          openPlayerModal(id, comp);
+        });
+      });
+      card.querySelector('.star-btn').addEventListener('click', (e)=>{
+        e.stopPropagation();
         starred[key] = !starred[key];
         localStorage.setItem(STARRED_KEY, JSON.stringify(starred));
         renderCurrent();
@@ -430,10 +527,12 @@ function renderCurrent(){
     .forEach((c,i)=>{
       const row = document.createElement('div');
       row.className = 'field-row';
+      row.dataset.playerId = c.id;
       const isFocus = focus.match(countryOf(c));
       row.innerHTML = `<span class="pos">${i+1}</span>
         <span class="fname">${isFocus?focus.flagEmoji+' ':''}${c.athlete?c.athlete.displayName:'Unknown'} <span style="color:#aaa">(${countryOf(c)||'—'})</span></span>
         <span class="fscore">${c.score||'–'}</span>`;
+      row.addEventListener('click', ()=> openPlayerModal(c.id, c));
       list.appendChild(row);
     });
   details.appendChild(list);
