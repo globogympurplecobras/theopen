@@ -159,6 +159,7 @@
     </div>
     <button id="refreshBtn">↻ Refresh</button>
     <button id="autoBtn">Auto: Off</button>
+    <button id="clearCacheBtn">🗑 Clear cache</button>
     <span id="status"><span class="dot"></span><span id="statusText">Loading…</span></span>
   </div>
   <div class="rounds" id="rounds"></div>
@@ -192,6 +193,7 @@ const NATIONALITY_SETS = {
 
 const FOCUS_KEY = 'open2026-focus-v2';
 const STARRED_KEY = 'open2026-starred-groups-v2';
+const DETAIL_CACHE_KEY = 'open2026-detail-cache-v1';
 
 let currentRoundIdx = 0;
 let focusKey = localStorage.getItem(FOCUS_KEY) || 'australia';
@@ -201,8 +203,33 @@ let starred = {};
 try{ starred = JSON.parse(localStorage.getItem(STARRED_KEY) || '{}'); }catch(e){ starred = {}; }
 
 // Cache of playersummary results per player id — a single call returns every
-// published round's tee time for that player, so it's reused across round tabs.
+// published round's tee time for that player, so it's reused across round tabs
+// AND persisted to localStorage so it survives page reloads (headshot/tee-time
+// data barely changes hour to hour, no need to refetch ~150 players every visit).
 const detailCache = {};
+try{
+  const stored = JSON.parse(localStorage.getItem(DETAIL_CACHE_KEY) || '{}');
+  Object.assign(detailCache, stored); // stored copy never contains nulls — see persistDetailCache
+}catch(e){}
+
+function persistDetailCache(){
+  try{
+    // Only persist successful lookups — failed ones (null) shouldn't be
+    // permanently remembered as failures across sessions/devices.
+    const toStore = {};
+    for(const id in detailCache){
+      if(detailCache[id] !== null) toStore[id] = detailCache[id];
+    }
+    localStorage.setItem(DETAIL_CACHE_KEY, JSON.stringify(toStore));
+  }catch(e){
+    // Likely quota exceeded — non-fatal, cache just won't persist this time.
+    console.warn('Could not persist detail cache', e);
+  }
+}
+
+function cachedPlayerCount(){
+  return Object.keys(detailCache).filter(id => detailCache[id] !== null).length;
+}
 let lastCompetitors = [];
 
 const roundsEl = document.getElementById('rounds');
@@ -305,6 +332,12 @@ function buildRoundTabs(){
 }
 
 document.getElementById('refreshBtn').addEventListener('click', loadRound);
+document.getElementById('clearCacheBtn').addEventListener('click', ()=>{
+  if(!confirm(`Clear ${cachedPlayerCount()} cached player photos/tee-times and refetch from ESPN?`)) return;
+  for(const id in detailCache) delete detailCache[id];
+  localStorage.removeItem(DETAIL_CACHE_KEY);
+  loadRound();
+});
 autoBtn.addEventListener('click', ()=>{
   autoRefresh = !autoRefresh;
   autoBtn.classList.toggle('active', autoRefresh);
@@ -432,8 +465,23 @@ async function loadRound(){
 
   // Need tee-time/group detail for the WHOLE field (not just the focus nationality)
   // since we don't know who else is in a group until we've checked everyone.
+  // Skip the progress UI entirely if everything needed is already cached locally.
+  const stillNeeded = competitors.filter(c => {
+    const cached = detailCache[c.id];
+    if(cached === undefined) return true;
+    if(cached === null) return false;
+    return !cached.rounds || !cached.rounds.some(r => r.period === round.n);
+  });
+
+  if(stillNeeded.length === 0){
+    setStatus('ok', `${competitors.length} in field · ${cachedPlayerCount()} cached locally · updated ${new Date().toLocaleTimeString()}`);
+    renderCurrent();
+    return;
+  }
+
   mainEl.innerHTML = `<div class="progress-wrap">
-    <span class="spinner"></span>Fetching tee-time/group data for ${competitors.length} players…
+    <span class="spinner"></span>Fetching tee-time/group data for ${stillNeeded.length} new players
+    (${competitors.length - stillNeeded.length} already cached)…
     <span id="progText">0/0</span>
     <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
   </div>`;
@@ -445,8 +493,9 @@ async function loadRound(){
     progFill.style.width = total ? (100*done/total)+'%' : '0%';
     setStatus('pending', `Fetching group data ${done}/${total}…`);
   });
+  persistDetailCache();
 
-  setStatus('ok', `${competitors.length} in field · updated ${new Date().toLocaleTimeString()}`);
+  setStatus('ok', `${competitors.length} in field · updated ${new Date().toLocaleTimeString()} · ${cachedPlayerCount()} cached locally`);
   renderCurrent();
 }
 
