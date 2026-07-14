@@ -114,27 +114,28 @@
   .field-row{ cursor:pointer; }
 
   .modal-overlay{
-    position:fixed; inset:0; background:rgba(10,15,12,.55);
-    display:none; align-items:flex-end; justify-content:center; z-index:100;
+    position:fixed; inset:0; background:rgba(10,15,12,.6);
+    display:none; align-items:center; justify-content:center; z-index:100;
+    padding:20px;
   }
   .modal-overlay.open{ display:flex; }
   .modal-card{
-    background:#fff; border-radius:18px 18px 0 0; width:100%; max-width:480px;
-    padding:20px 20px 28px; max-height:80vh; overflow-y:auto;
-    animation:slideup .18s ease-out;
+    background:#fff; border-radius:20px; width:100%; max-width:400px;
+    padding:26px 22px 24px; max-height:85vh; overflow-y:auto;
+    animation:popin .16s ease-out;
   }
-  @keyframes slideup{ from{ transform:translateY(20px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @keyframes popin{ from{ transform:scale(.94); opacity:0; } to{ transform:scale(1); opacity:1; } }
   .modal-close{
     float:right; background:#eee; border:none; border-radius:50%; width:30px; height:30px;
     font-size:1rem; cursor:pointer; color:#666;
   }
-  .modal-top{ display:flex; gap:14px; align-items:center; margin-bottom:14px; }
+  .modal-top{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; margin:6px 0 16px; }
   .modal-headshot{
-    width:76px; height:76px; border-radius:50%; object-fit:cover; background:#eee;
-    border:2px solid var(--line); flex:0 0 auto;
+    width:140px; height:140px; border-radius:50%; object-fit:cover; background:#eee;
+    border:3px solid var(--line); flex:0 0 auto; margin-bottom:10px;
   }
-  .modal-name{ font-size:1.15rem; font-weight:800; margin:0 0 2px; }
-  .modal-meta{ font-size:.78rem; color:#6b6558; }
+  .modal-name{ font-size:1.3rem; font-weight:800; margin:0; }
+  .modal-meta{ font-size:.82rem; color:#6b6558; }
   .modal-stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:.85rem; margin-top:10px; }
   .modal-stats div b{ display:block; font-size:.68rem; text-transform:uppercase; color:#8a8577; font-weight:700; letter-spacing:.3px; }
   .modal-holes{ margin-top:14px; font-size:.72rem; color:#6b6558; }
