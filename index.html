@@ -215,7 +215,15 @@ const focusScandiBtn = document.getElementById('focusScandi');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalCard = document.getElementById('modalCard');
 
-function closeModal(){ modalOverlay.classList.remove('open'); }
+let scrollLockY = 0;
+
+function closeModal(){
+  modalOverlay.classList.remove('open');
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  window.scrollTo(0, scrollLockY);
+}
 modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) closeModal(); });
 
 function openPlayerModal(playerId, fallbackCompetitor){
@@ -251,6 +259,11 @@ function openPlayerModal(playerId, fallbackCompetitor){
     ${profile && profile.link ? `<div class="modal-holes"><a href="${profile.link}" target="_blank" rel="noopener">ESPN player page ↗</a></div>` : ''}
   `;
   modalCard.querySelector('#modalCloseBtn').addEventListener('click', closeModal);
+
+  scrollLockY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${scrollLockY}px`;
+  document.body.style.width = '100%';
   modalOverlay.classList.add('open');
 }
 
